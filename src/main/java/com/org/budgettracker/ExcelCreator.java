@@ -1,5 +1,6 @@
 package com.org.budgettracker;
 
+import com.org.budgettracker.models.api.BudgetCalculation;
 import com.org.budgettracker.models.implementation.BudgetCalculationBiweekly;
 import com.org.budgettracker.models.enums.ExpenseGroup;
 import org.apache.poi.ss.usermodel.Row;
@@ -12,9 +13,9 @@ import java.io.IOException;
 import java.util.Map;
 
 public class ExcelCreator {
-    private final BudgetCalculationBiweekly budget;
+    private final BudgetCalculation budget;
 
-    public ExcelCreator(BudgetCalculationBiweekly budget) {
+    public ExcelCreator(BudgetCalculation budget) {
         this.budget = budget;
     }
 
@@ -42,7 +43,7 @@ public class ExcelCreator {
 
     private void writeSheet(Workbook workbook) {
         // Write to file
-        try (FileOutputStream fileOut = new FileOutputStream("output.xslx")) {
+        try (FileOutputStream fileOut = new FileOutputStream("testingfile/output.xslx")) {
             workbook.write(fileOut);
         } catch (IOException e) {
             e.printStackTrace();
