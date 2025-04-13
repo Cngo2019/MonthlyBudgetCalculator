@@ -9,7 +9,6 @@ import lombok.ToString;
 import java.util.List;
 
 @AllArgsConstructor
-@NoArgsConstructor
 @ToString
 @Getter
 public class BudgetCalculationBiweekly implements BudgetCalculation {
