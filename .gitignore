@@ -1,0 +1,4 @@
+testingfile/*
+target/*
+.vscode
+.idea
