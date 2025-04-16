@@ -6,73 +6,90 @@ import com.org.budgettracker.models.implementation.BiWeeklyTakeHomePay;
 import com.org.budgettracker.models.implementation.BudgetCalculationBiweekly;
 import com.org.budgettracker.models.implementation.Expense;
 import javafx.application.Application;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+import java.util.*;
+
 public class ExpenseCreatorApp extends Application {
 
-    private final ObservableList<Expense> expenseList = FXCollections.observableArrayList();
+    private final Map<ExpenseGroup, VBox> expenseInputsMap = new EnumMap<>(ExpenseGroup.class);
+    private final List<Expense> expenseList = new ArrayList<>();
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("Expense Entry Form");
+        primaryStage.setTitle("Multi-Column Expense Entry");
 
-        // Input fields
-        TextField nameField = new TextField();
-        nameField.setPromptText("Expense Name");
+        // Layout for the columns
+        GridPane grid = new GridPane();
+        grid.setHgap(20);
+        grid.setVgap(20);
+        grid.setPadding(new Insets(20));
 
-        TextField costField = new TextField();
-        costField.setPromptText("Cost");
+        int col = 0;
+        int row = 0;
 
-        ComboBox<ExpenseGroup> groupComboBox = new ComboBox<>();
-        groupComboBox.getItems().addAll(ExpenseGroup.values());
-        groupComboBox.setPromptText("Select Expense Group");
+        for (ExpenseGroup group : ExpenseGroup.values()) {
+            VBox column = new VBox(10);
+            column.setPadding(new Insets(10));
+            column.setStyle("-fx-border-color: #ccc; -fx-border-radius: 5; -fx-padding: 10;");
+            Label title = new Label(group.name());
+            title.setStyle("-fx-font-weight: bold;");
 
-        // List to show added expenses
-        ListView<Expense> listView = new ListView<>(expenseList);
-        listView.setPrefHeight(200);
+            VBox rowsBox = new VBox(5);
+            Button addRowBtn = new Button("➕ Add Row");
 
+            addRowBtn.setOnAction(e -> rowsBox.getChildren().add(createExpenseRow(rowsBox)));
 
+            column.getChildren().addAll(title, rowsBox, addRowBtn);
+            expenseInputsMap.put(group, rowsBox);
+            grid.add(column, col, row);
+
+            col++;
+            if (col == 2) {
+                col = 0;
+                row++;
+            }
+        }
+
+        // Biweekly input & submit
         TextField biweeklyInput = new TextField();
         biweeklyInput.setPromptText("Take home pay (biweekly)");
 
-        // Buttons
-        Button addButton = new Button("➕ Add Expense");
+        TextField excelSheetNameIn = new TextField();
+        excelSheetNameIn.setPromptText("Excel sheet name");
+
         Button submitButton = new Button("✅ Submit All");
         Label statusLabel = new Label();
 
-        addButton.setOnAction(e -> {
-            String name = nameField.getText();
-            String costText = costField.getText();
-            ExpenseGroup group = groupComboBox.getValue();
-
-            if (name.isEmpty() || costText.isEmpty() || group == null) {
-                statusLabel.setText("⚠️ Please fill out all fields.");
-                return;
-            }
-
-            try {
-                double cost = Double.parseDouble(costText);
-                Expense expense = new Expense(name, cost, group);
-                expenseList.add(expense);
-
-                // Clear fields for next entry
-                nameField.clear();
-                costField.clear();
-                groupComboBox.getSelectionModel().clearSelection();
-
-                statusLabel.setText("✅ Expense added.");
-            } catch (NumberFormatException ex) {
-                statusLabel.setText("❌ Invalid cost. Please enter a valid number.");
-            }
-        });
-
         submitButton.setOnAction(e -> {
+            for (Map.Entry<ExpenseGroup, VBox> entry : expenseInputsMap.entrySet()) {
+                ExpenseGroup group = entry.getKey();
+                VBox rows = entry.getValue();
+
+                for (javafx.scene.Node node : rows.getChildren()) {
+                    if (node instanceof HBox uiRow) {
+                        TextField nameField = (TextField) uiRow.getChildren().get(0);
+                        TextField costField = (TextField) uiRow.getChildren().get(1);
+
+                        String name = nameField.getText().trim();
+                        String costText = costField.getText().trim();
+
+                        if (!name.isEmpty() && !costText.isEmpty()) {
+                            try {
+                                double cost = Double.parseDouble(costText);
+                                expenseList.add(new Expense(name, cost, group));
+                            } catch (NumberFormatException ex) {
+                                statusLabel.setText("❌ Invalid cost in group " + group);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
 
             if (biweeklyInput.getText().isEmpty()) {
                 statusLabel.setText("⚠️ Please enter your biweekly take-home amount.");
@@ -82,32 +99,41 @@ public class ExpenseCreatorApp extends Application {
             double takeHome;
             try {
                 takeHome = Double.parseDouble(biweeklyInput.getText());
-            } catch(NumberFormatException ex) {
-                statusLabel.setText("Invalid biweekly amount. Please enter a number");
+            } catch (NumberFormatException ex) {
+                statusLabel.setText("❌ Invalid biweekly amount.");
                 return;
             }
 
             if (expenseList.isEmpty()) {
-                statusLabel.setText("⚠️ No expenses to submit.");
+                statusLabel.setText("⚠️ No expenses entered.");
             } else {
-                // Do something with the full list (e.g. save to DB, file, etc.)
-                System.out.println("Submitted Expenses:");
-                expenseList.forEach(System.out::println);
-
-
                 BudgetCalculation budget = new BudgetCalculationBiweekly(new BiWeeklyTakeHomePay(takeHome), expenseList);
-                ExcelCreator excelCreator = new ExcelCreator(budget);
+                ExcelCreator excelCreator = new ExcelCreator(budget, excelSheetNameIn.getText().trim());
                 excelCreator.generateSpreadSheet();
-                statusLabel.setText("🎉 Submitted " + expenseList.size() + " expenses.");
                 expenseList.clear();
+                statusLabel.setText("🎉 Submitted " + expenseList.size() + " expenses.");
             }
         });
 
-        VBox form = new VBox(10, nameField, costField, groupComboBox, addButton, listView, biweeklyInput, submitButton, statusLabel);
-        form.setPadding(new Insets(20));
+        VBox root = new VBox(20, grid, biweeklyInput, submitButton, statusLabel, excelSheetNameIn);
+        root.setPadding(new Insets(20));
 
-        primaryStage.setScene(new Scene(form, 400, 500));
+        primaryStage.setScene(new Scene(root, 950, 600));
         primaryStage.show();
+    }
+
+    private HBox createExpenseRow(VBox parentBox) {
+        TextField name = new TextField();
+        name.setPromptText("Name");
+
+        TextField cost = new TextField();
+        cost.setPromptText("Cost");
+
+        Button delete = new Button("❌");
+        delete.setOnAction(e -> parentBox.getChildren().remove(delete.getParent()));
+
+        HBox row = new HBox(10, name, cost, delete);
+        return row;
     }
 
     public static void main(String[] args) {
