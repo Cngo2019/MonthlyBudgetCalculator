@@ -1,6 +1,8 @@
-# MonthlyBudgetCalculator
+# MonthlyExpensesExcelCreator
 
 This application takes in a list of expenses and calculates your take home monthly budget based on your biweekly take home pay.
+It will then generate an excel sheet that provides you all your expenses, the expense groups, your monthly take home pay and any
+remaining amount.
 
 # Features:
 
