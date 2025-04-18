@@ -39,8 +39,11 @@ public class ExpenseCreatorApp extends Application {
         excelSheetNameIn.setPromptText("Excel sheet name");
 
         if (loadedBudget != null) {
-            biweeklyInput.setText(String.valueOf(loadedBudget.calculateMonthlyTakeHomePay()));
+            biweeklyInput.setText(
+                    String.valueOf(round(loadedBudget.getTakeHomePay().getPay()))
+            );
         }
+
 
         CheckBox saveSettingsCheck = new CheckBox("💾 Save these settings for later");
         Button submitButton = new Button("✅ Submit All");
@@ -214,7 +217,12 @@ public class ExpenseCreatorApp extends Application {
         return new HBox(10, name, cost, delete);
     }
 
+    private double round(double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
+
 }
