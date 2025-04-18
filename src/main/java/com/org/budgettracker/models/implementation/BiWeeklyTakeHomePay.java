@@ -3,8 +3,10 @@ package com.org.budgettracker.models.implementation;
 import com.org.budgettracker.models.api.TakeHomePay;
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class BiWeeklyTakeHomePay implements TakeHomePay {
+public class BiWeeklyTakeHomePay implements TakeHomePay, Serializable {
     private double pay;
 
     public BiWeeklyTakeHomePay(double pay) {

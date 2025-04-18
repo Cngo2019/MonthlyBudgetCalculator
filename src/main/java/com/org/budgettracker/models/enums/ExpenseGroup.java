@@ -1,6 +1,8 @@
 package com.org.budgettracker.models.enums;
 
-public enum ExpenseGroup {
+import java.io.Serializable;
+
+public enum ExpenseGroup implements Serializable {
     Truist_Credit(1, "Truist credit"),
     Discover_Credit(2, "Discover credit"),
     Investments(3, "Investments"),

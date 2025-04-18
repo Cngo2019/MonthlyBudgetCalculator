@@ -6,13 +6,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.util.function.Predicate;
+import java.io.Serializable;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
 @Data
-public class Expense {
+public class Expense implements Serializable {
     private String expenseName;
     private double cost;
     private ExpenseGroup group;
