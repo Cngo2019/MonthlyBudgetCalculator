@@ -11,7 +11,11 @@ import java.util.List;
 @AllArgsConstructor
 @ToString
 @Getter
-public class BudgetCalculationBiweekly implements BudgetCalculation, Serializable {
-    private BiWeeklyTakeHomePay takeHomePay;
+public class BiweeklyBudget implements BudgetCalculation, Serializable {
+    private double takeHomePay;
     private List<Expense> expenses;
+    @Override
+    public double calculateMonthlyTakeHomePay() {
+        return (takeHomePay * 26) / 12.0;
+    }
 }

@@ -2,26 +2,38 @@ package com.org.budgettracker;
 
 import com.org.budgettracker.exceptions.ExcelCreationException;
 import com.org.budgettracker.models.api.BudgetCalculation;
+import com.org.budgettracker.models.api.TakeHomePay;
+import com.org.budgettracker.models.enums.PayPeriodType;
 import com.org.budgettracker.models.enums.ExpenseGroup;
-import com.org.budgettracker.models.implementation.BiWeeklyTakeHomePay;
-import com.org.budgettracker.models.implementation.BudgetCalculationBiweekly;
+
+import com.org.budgettracker.models.implementation.BiweeklyBudget;
 import com.org.budgettracker.models.implementation.Expense;
+import com.org.budgettracker.models.implementation.MonthlyBudget;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import org.w3c.dom.Text;
 
 import java.io.*;
 import java.util.*;
+
+import static com.org.budgettracker.models.enums.PayPeriodType.*;
 
 public class ExpenseCreatorApp extends Application {
 
     private final Map<ExpenseGroup, VBox> expenseInputsMap = new EnumMap<>(ExpenseGroup.class);
     private final List<Expense> expenseList = new ArrayList<>();
-    private TextField biweeklyInput;
-    private BudgetCalculationBiweekly loadedBudget;
+    private BudgetCalculation loadedBudget;
+    private PayPeriodType payPeriodType;
+    private final Map<String, PayPeriodType> buttonToCaluclationTypeMap = Map.of(
+            "Biweekly", BIWEEKLY,
+            "Monthly", MONTHLY,
+            "Weekly", WEEKLY
+    );
 
     @Override
     public void start(Stage primaryStage) {
@@ -31,30 +43,69 @@ public class ExpenseCreatorApp extends Application {
         loadSavedBudget(); // Load saved budget if available
 
         GridPane grid = setupGrid();
+        List<Node> payPeriodTypeUiElements = setupRadioButtonOptions();
 
-        biweeklyInput = new TextField();
-        biweeklyInput.setPromptText("Take home pay (biweekly)");
+        TextField takeHomePayIn = new TextField();
+        takeHomePayIn.setPromptText("Take home pay (biweekly)");
 
         TextField excelSheetNameIn = new TextField();
         excelSheetNameIn.setPromptText("Excel sheet name");
 
         if (loadedBudget != null) {
-            biweeklyInput.setText(
-                    String.valueOf(round(loadedBudget.getTakeHomePay().getPay()))
+            takeHomePayIn.setText(
+                    String.valueOf(round(loadedBudget.getTakeHomePay()))
             );
         }
-
 
         CheckBox saveSettingsCheck = new CheckBox("💾 Save these settings for later");
         Button submitButton = new Button("✅ Submit All");
         Label statusLabel = new Label();
 
-        defineOnSubmit(submitButton, statusLabel, biweeklyInput, excelSheetNameIn, saveSettingsCheck);
+        defineOnSubmit(submitButton, statusLabel, takeHomePayIn, excelSheetNameIn, saveSettingsCheck);
 
-        VBox root = new VBox(20, grid, biweeklyInput, submitButton, saveSettingsCheck, statusLabel, excelSheetNameIn);
+        VBox root = new VBox(20);
+
+        root.getChildren().add(grid);
+        root.getChildren().add(takeHomePayIn);
+        root.getChildren().add(excelSheetNameIn);
+        root.getChildren().add(saveSettingsCheck);
+        root.getChildren().add(submitButton);
+        root.getChildren().add(statusLabel);
+        root.getChildren().addAll(payPeriodTypeUiElements);
+
         root.setPadding(new Insets(20));
         primaryStage.setScene(new Scene(root, 950, 600));
         primaryStage.show();
+    }
+
+    private List<Node> setupRadioButtonOptions() {
+        // Create label
+        Label label = new Label("Choose an option:");
+        // Create radio buttons
+        RadioButton option1 = new RadioButton("Monthly");
+        RadioButton option2 = new RadioButton("Weekly");
+        RadioButton option3 = new RadioButton("Biweekly");
+
+        // Group the radio buttons
+        ToggleGroup group = new ToggleGroup();
+        option1.setToggleGroup(group);
+        option2.setToggleGroup(group);
+        option3.setToggleGroup(group);
+
+        // Optional: Set default selection
+        option1.setSelected(true);
+
+        // Handle selection changes
+        group.selectedToggleProperty().addListener((obsVal, oldVal, newVal) -> {
+            if (newVal != null) {
+                RadioButton selected = (RadioButton) newVal;
+                payPeriodType = buttonToCaluclationTypeMap.get(selected.getText());
+            }
+        });
+
+        return Arrays.asList(
+                label, option1, option2, option3
+        );
     }
 
     private void loadSavedBudget() {
@@ -72,7 +123,7 @@ public class ExpenseCreatorApp extends Application {
             }
 
             try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(budgetFile))) {
-                loadedBudget = (BudgetCalculationBiweekly) in.readObject();
+                loadedBudget = (BiweeklyBudget) in.readObject();
                 System.out.println("✅ Loaded saved budget from settings folder.");
             }
         } catch (Exception ex) {
@@ -130,7 +181,7 @@ public class ExpenseCreatorApp extends Application {
 
     private void defineOnSubmit(Button submitButton,
                                 Label statusLabel,
-                                TextField biweeklyInput,
+                                TextField takeHomePayIn,
                                 TextField excelSheetNameIn,
                                 CheckBox saveSettingsCheck) {
 
@@ -162,14 +213,19 @@ public class ExpenseCreatorApp extends Application {
                 }
             }
 
-            if (biweeklyInput.getText().isEmpty()) {
+            if (takeHomePayIn.getText().isEmpty()) {
                 statusLabel.setText("⚠️ Please enter your biweekly take-home amount.");
+                return;
+            }
+
+            if (payPeriodType == null) {
+                statusLabel.setText("⚠️ Please enter your pay period amount.");
                 return;
             }
 
             double takeHome;
             try {
-                takeHome = Double.parseDouble(biweeklyInput.getText());
+                takeHome = Double.parseDouble(takeHomePayIn.getText());
             } catch (NumberFormatException ex) {
                 statusLabel.setText("❌ Invalid biweekly amount.");
                 return;
@@ -180,9 +236,8 @@ public class ExpenseCreatorApp extends Application {
                 return;
             }
 
-            BudgetCalculationBiweekly budget = new BudgetCalculationBiweekly(
-                    new BiWeeklyTakeHomePay(takeHome), expenseList
-            );
+
+            BudgetCalculation budget = determineBudgetCalculation(takeHome, expenseList);
 
             if (saveSettingsCheck.isSelected()) {
                 try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("settings/saved_budget.ser"))) {
@@ -202,6 +257,22 @@ public class ExpenseCreatorApp extends Application {
                 statusLabel.setText("There was an error creating your excel file. Please try again or restart the application.");
             }
         });
+    }
+
+    private BudgetCalculation determineBudgetCalculation(double takeHome, List<Expense> expenseList) {
+        if (payPeriodType == BIWEEKLY) {
+            return new BiweeklyBudget(takeHome, expenseList);
+        }
+
+        if (payPeriodType == MONTHLY) {
+            return new MonthlyBudget(takeHome, expenseList);
+        }
+
+        if (payPeriodType == WEEKLY) {
+            return new MonthlyBudget(takeHome, expenseList);
+        }
+
+        throw new RuntimeException();
     }
 
     private HBox createExpenseRow(VBox parentBox) {
