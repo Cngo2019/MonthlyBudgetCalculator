@@ -6,6 +6,6 @@ remaining amount.
 
 Simply enter in the name of the expense, cost, and corresponding group (dynamically changing groups are coming soon).
 
-Your EXCEL sheet will be saved to the data folder in <em>data/<em> folder and your pre-saved settings will be saved in <em>settings/<em>
+Your EXCEL sheet will be saved to the data folder in <em>data/</em> folder and your pre-saved settings will be saved in <em>settings/</em>
 
 You can create as many spread sheets as needed to test out remaining expenses.
