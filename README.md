@@ -6,22 +6,6 @@ remaining amount.
 
 Simply enter in the name of the expense, cost, and corresponding group (dynamically changing groups are coming soon).
 
-# Features:
+Your EXCEL sheet will be saved to the data folder in <em>data/<em> folder and your pre-saved settings will be saved in <em>settings/<em>
 
-<ul>
-  <li>
-    You can generate multiple spread sheets.
-  </li>
-<br>
-  <li>
-    (COMING SOON) You can create expense groups dynamically and put your individual expenses under that created group.
-An issue has been created here: https://github.com/Cngo2019/MonthlyBudgetCalculator/issues .
-    <br>
-  </li>
-
-<br>
-
-  <li>
-    (COMING SOON) You can base it off of your weekly pay or bi-weekly, weekly, or monthly pay.
-  </li>
-</ul>
+You can create as many spread sheets as needed to test out remaining expenses.
