@@ -26,18 +26,7 @@ public interface BudgetCalculation {
                 .sum();
     }
 
-    default double totalExpensesByGroup(ExpenseGroup group) {
-        return getExpenses().stream()
-                .filter(it -> it.matches(group))
-                .mapToDouble(Expense::getCost)
-                .sum();
-    }
-
-    default double calculateMonthlyTakeHomePay() {
-        return getTakeHomePay().calculateMonthlyAmount();
-    }
-
+    double calculateMonthlyTakeHomePay();
+    double getTakeHomePay();
     List<Expense> getExpenses();
-
-    TakeHomePay getTakeHomePay();
 }

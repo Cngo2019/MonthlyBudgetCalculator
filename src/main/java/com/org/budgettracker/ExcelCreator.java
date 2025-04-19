@@ -1,5 +1,6 @@
 package com.org.budgettracker;
 
+import com.org.budgettracker.exceptions.ExcelCreationException;
 import com.org.budgettracker.models.api.BudgetCalculation;
 import com.org.budgettracker.models.enums.ExpenseGroup;
 import com.org.budgettracker.models.implementation.Expense;
@@ -22,7 +23,7 @@ public class ExcelCreator {
         this.excelOutputName = excelOutputName;
     }
 
-    public void generateSpreadSheet() {
+    public void generateSpreadSheet() throws ExcelCreationException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Expenses");
 
@@ -34,19 +35,19 @@ public class ExcelCreator {
         close(workbook);
     }
 
-    private void close(Workbook workbook) {
+    private void close(Workbook workbook) throws ExcelCreationException {
         try {
             workbook.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new ExcelCreationException();
         }
     }
 
-    private void writeSheet(Workbook workbook) {
-        try (FileOutputStream fileOut = new FileOutputStream(excelOutputName + ".xlsx")) {
+    private void writeSheet(Workbook workbook) throws ExcelCreationException {
+        try (FileOutputStream fileOut = new FileOutputStream("data/ " + excelOutputName + ".xlsx")) {
             workbook.write(fileOut);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new ExcelCreationException();
         }
     }
 
